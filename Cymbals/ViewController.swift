@@ -10,18 +10,15 @@ import Cocoa
 
 class ViewController: NSViewController {
 
+	@IBOutlet var textView: SymbolTextView!
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		// Do any additional setup after loading the view.
+		textView.lnv_setUpLineNumberView()
 	}
-
-	override var representedObject: AnyObject? {
-		didSet {
-		// Update the view, if already loaded.
-		}
-	}
-
-
+	
 }
+
+
 

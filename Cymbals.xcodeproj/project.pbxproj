@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B6E0C3591C96ADE6000703BB /* LineNumberRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0C3581C96ADE6000703BB /* LineNumberRulerView.swift */; };
+		B6E266FC1C960B2800ABBD2E /* SymbolTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */; };
+		B6E266FE1C960B6700ABBD2E /* Symbolicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */; };
 		B6E5C2F31C95D6450095FB29 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E5C2F21C95D6450095FB29 /* AppDelegate.swift */; };
 		B6E5C2F51C95D6450095FB29 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E5C2F41C95D6450095FB29 /* ViewController.swift */; };
 		B6E5C2F71C95D6450095FB29 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6E5C2F61C95D6450095FB29 /* Assets.xcassets */; };
@@ -14,6 +17,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B6E0C3581C96ADE6000703BB /* LineNumberRulerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineNumberRulerView.swift; sourceTree = "<group>"; };
+		B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SymbolTextView.swift; sourceTree = "<group>"; };
+		B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Symbolicator.swift; sourceTree = "<group>"; };
 		B6E5C2EF1C95D6440095FB29 /* Cymbals.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cymbals.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6E5C2F21C95D6450095FB29 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B6E5C2F41C95D6450095FB29 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -52,8 +58,11 @@
 		B6E5C2F11C95D6440095FB29 /* Cymbals */ = {
 			isa = PBXGroup;
 			children = (
+				B6E0C3581C96ADE6000703BB /* LineNumberRulerView.swift */,
 				B6E5C2F21C95D6450095FB29 /* AppDelegate.swift */,
 				B6E5C2F41C95D6450095FB29 /* ViewController.swift */,
+				B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */,
+				B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */,
 				B6E5C2F61C95D6450095FB29 /* Assets.xcassets */,
 				B6E5C2F81C95D6450095FB29 /* Main.storyboard */,
 				B6E5C2FB1C95D6450095FB29 /* Info.plist */,
@@ -131,6 +140,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6E266FC1C960B2800ABBD2E /* SymbolTextView.swift in Sources */,
+				B6E266FE1C960B6700ABBD2E /* Symbolicator.swift in Sources */,
+				B6E0C3591C96ADE6000703BB /* LineNumberRulerView.swift in Sources */,
 				B6E5C2F51C95D6450095FB29 /* ViewController.swift in Sources */,
 				B6E5C2F31C95D6450095FB29 /* AppDelegate.swift in Sources */,
 			);
@@ -236,7 +248,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Cymbals/Info.plist;
+				INFOPLIST_PREFIX_HEADER = "/tmp/Cymbals-Info.plist-Prefix.pch";
+				INFOPLIST_PREPROCESS = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = net.macpietsapps.Cymbals;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -248,7 +263,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Cymbals/Info.plist;
+				INFOPLIST_PREFIX_HEADER = "/tmp/Cymbals-Info.plist-Prefix.pch";
+				INFOPLIST_PREPROCESS = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_BUNDLE_IDENTIFIER = net.macpietsapps.Cymbals;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -273,6 +291,7 @@
 				B6E5C3001C95D6450095FB29 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
