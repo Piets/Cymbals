@@ -13,6 +13,8 @@ class Symbolicator: NSObject
 	
 	var dsymsCache = [String: String]()
 	
+	var userDsym: String?
+	
 	internal func processSampleReport(report: String) -> (result:String?, message:String?)
 	{
 		var message:String? = nil
@@ -103,6 +105,20 @@ class Symbolicator: NSObject
 	
 	private func dsymForBinary(binary: String, report: String) -> (result:String?, message:String?)
 	{
+		if let userDsym = self.userDsym
+		{
+			let deeperPath = "\(userDsym)/Contents/Resources/DWARF/"
+			
+			let fileManager = NSFileManager.defaultManager()
+			
+			let files = fileManager.enumeratorAtPath(deeperPath)
+			if let file = files?.allObjects.first {
+				return("\(userDsym)/Contents/Resources/DWARF/\(file)", nil)
+			}
+			
+			return(nil, "😢 no dsym were found at your path")
+		}
+		
 		var cachedValue = dsymsCache[binary]
 		
 		if (cachedValue != nil)
