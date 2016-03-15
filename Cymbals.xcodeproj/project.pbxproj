@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B67659B71C982C9E001BE675 /* HiHat.aif in Resources */ = {isa = PBXBuildFile; fileRef = B67659B61C982C9E001BE675 /* HiHat.aif */; };
 		B6E0C3591C96ADE6000703BB /* LineNumberRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0C3581C96ADE6000703BB /* LineNumberRulerView.swift */; };
 		B6E266FC1C960B2800ABBD2E /* SymbolTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */; };
 		B6E266FE1C960B6700ABBD2E /* Symbolicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B67659B61C982C9E001BE675 /* HiHat.aif */ = {isa = PBXFileReference; lastKnownFileType = file; path = HiHat.aif; sourceTree = "<group>"; };
 		B6E0C3581C96ADE6000703BB /* LineNumberRulerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineNumberRulerView.swift; sourceTree = "<group>"; };
 		B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SymbolTextView.swift; sourceTree = "<group>"; };
 		B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Symbolicator.swift; sourceTree = "<group>"; };
@@ -63,6 +65,7 @@
 				B6E5C2F41C95D6450095FB29 /* ViewController.swift */,
 				B6E266FD1C960B6700ABBD2E /* Symbolicator.swift */,
 				B6E266FB1C960B2800ABBD2E /* SymbolTextView.swift */,
+				B67659B61C982C9E001BE675 /* HiHat.aif */,
 				B6E5C2F61C95D6450095FB29 /* Assets.xcassets */,
 				B6E5C2F81C95D6450095FB29 /* Main.storyboard */,
 				B6E5C2FB1C95D6450095FB29 /* Info.plist */,
@@ -130,6 +133,7 @@
 			files = (
 				B6E5C2F71C95D6450095FB29 /* Assets.xcassets in Resources */,
 				B6E5C2FA1C95D6450095FB29 /* Main.storyboard in Resources */,
+				B67659B71C982C9E001BE675 /* HiHat.aif in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

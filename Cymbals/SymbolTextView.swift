@@ -98,6 +98,14 @@ class SymbolTextView: NSTextView {
 				dispatch_async(dispatch_get_main_queue()) {
 						self.window?.title = "Cymbals"
 						self.string = string
+					
+					if (result.result != nil)
+					{
+						if let hihat = NSSound(named: "HiHat.aif")
+						{
+							hihat.play()
+						}
+					}
 				}
 			}
 		}
