@@ -20,17 +20,22 @@ class Symbolicator: NSObject
 		var message:String? = nil
 		
 		//I know, I know, regexes are bad, but boy are they usefull 🙈
-		let loadAddressExpression = try! NSRegularExpression(pattern: "\\?\\?\\?\\s*\\(in\\s(.*)\\)\\s*load\\saddress\\s(.*)\\s\\+.*\\[(.*)\\]", options: [])
-		var matches = loadAddressExpression.matchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count))
-		let initialMatchesCount = matches.count
+		let sampleReportExpression = try! NSRegularExpression(pattern: "\\?\\?\\?\\s*\\(in\\s(.*)\\)\\s*load\\saddress\\s(.*)\\s\\+.*\\[(.*)\\]", options: [])
+		let stacktraceExpression = try! NSRegularExpression(pattern: "[0-9]+\\s+(.*)\\s+(0[xX][0-9a-fA-F]+)\\s(\\1).*\\s([0-9]+)$", options: [.AnchorsMatchLines])
 		
-		if initialMatchesCount > 0
+		var sampleMatches = sampleReportExpression.matchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count))
+		let sampleMatchesCount = sampleMatches.count
+		
+		var stacktraceMatches = stacktraceExpression.matchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count))
+		let stacktraceMatchesCount = stacktraceMatches.count
+		
+		if sampleMatchesCount > 0
 		{
 			var itemsToSkip = 0
 			var replacedReport = report
 			
-			for var index = 0; index < initialMatchesCount; index++ {
-				let match = matches[itemsToSkip] as NSTextCheckingResult
+			for var index = 0; index < sampleMatchesCount; index++ {
+				let match = sampleMatches[itemsToSkip] as NSTextCheckingResult
 				
 				let binary = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(1))
 				let loadAddress = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(2))
@@ -64,7 +69,48 @@ class Symbolicator: NSObject
 					itemsToSkip++
 				}
 				
-				matches = loadAddressExpression.matchesInString(replacedReport, options: [], range: NSRange(location: 0, length: replacedReport.utf16.count))
+				sampleMatches = sampleReportExpression.matchesInString(replacedReport, options: [], range: NSRange(location: 0, length: replacedReport.utf16.count))
+			}
+			
+			return (replacedReport, message)
+		}
+		else if stacktraceMatchesCount > 0 && userDsym != nil
+		{
+			var itemsToSkip = 0
+			var replacedReport = report
+			
+			for var index = 0; index < stacktraceMatchesCount; index++ {
+				let match = stacktraceMatches[itemsToSkip] as NSTextCheckingResult
+				
+				let binary = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(1))
+				let stackAddress = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(2))
+				let decimalAddress = Int((replacedReport as NSString).substringWithRange(match.rangeAtIndex(4)))!
+				
+				let cleanStackAddress = stackAddress.stringByReplacingOccurrencesOfString("0x", withString: "")
+				let intStackAddress = Int(cleanStackAddress, radix: 16)!
+				
+				let loadAddress = "0x" + String((intStackAddress - decimalAddress), radix: 16)
+				
+				let dsymResult = dsymForBinary(binary, report: replacedReport)
+				
+				if let dsymPath = dsymResult.result
+				{
+					//We got everything atos needs 😃
+					let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
+					let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+					
+					if (trimmedString == "")
+					{
+						message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
+						itemsToSkip++
+					}
+					else
+					{
+						replacedReport = (replacedReport as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
+					}
+				}
+				
+				stacktraceMatches = stacktraceExpression.matchesInString(replacedReport, options: [], range: NSRange(location: 0, length: replacedReport.utf16.count))
 			}
 			
 			return (replacedReport, message)

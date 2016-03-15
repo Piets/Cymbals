@@ -6,8 +6,9 @@ Paste an unsymbolicated sample report in the main window. Cymbals will then pars
 Additionally you can drag and drop a dsym file onto Cymbals. It will then only use that one dsym files to symbolicate a sample report. This is usefull if you all you have is e.g. one line of the sample report.
 
 ##Known issues
-*    stacktraces are not supported yet (only sample reports)
 *    The code. It's pretty bad. I know. I'm sorry. I'll fix it when I have time.
+*    The dsym view is not yet animated nicely (and could use a bit more design too maybe)
+*    The dsym view currently does not cause the TextView to resize it, which means the last line will always be obscured
 
 ##License
 ```
