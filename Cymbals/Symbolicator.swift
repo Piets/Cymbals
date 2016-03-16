@@ -18,109 +18,155 @@ class Symbolicator: NSObject
 	internal func processSampleReport(report: String) -> (result:String?, message:String?)
 	{
 		var message:String? = nil
+		var result = ""
 		
-		//I know, I know, regexes are bad, but boy are they usefull 🙈
-		let sampleReportExpression = try! NSRegularExpression(pattern: "\\?\\?\\?\\s*\\(in\\s(.*)\\)\\s*load\\saddress\\s(.*)\\s\\+.*\\[(.*)\\]", options: [])
-		let stacktraceExpression = try! NSRegularExpression(pattern: "[0-9]+\\s+(.*)\\s+(0[xX][0-9a-fA-F]+)\\s(\\1).*\\s([0-9]+)$", options: [.AnchorsMatchLines])
+		//split the report into lines
+		var lines = report.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
 		
-		var sampleMatches = sampleReportExpression.matchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count))
-		let sampleMatchesCount = sampleMatches.count
-		
-		var stacktraceMatches = stacktraceExpression.matchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count))
-		let stacktraceMatchesCount = stacktraceMatches.count
-		
-		if sampleMatchesCount > 0
+		if (lines.count == 1)
 		{
-			var itemsToSkip = 0
-			var replacedReport = report
+			//try to insert some newlines, don't know if it's a good idea
+			//wait, i definetly know it's a bad idea 😇
+			let lineExpression = try! NSRegularExpression(pattern: "\\+\\s[0-9]+\\s?", options: [])
+			let expanedLine = lineExpression.stringByReplacingMatchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count), withTemplate: "$0\n")
 			
-			for var index = 0; index < sampleMatchesCount; index++ {
-				let match = sampleMatches[itemsToSkip] as NSTextCheckingResult
-				
-				let binary = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(1))
-				let loadAddress = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(2))
-				let stackAddress = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(3))
-				
-				let dsymResult = dsymForBinary(binary, report: replacedReport)
-				
-				if let dsymPath = dsymResult.result
-				{
-					//We got everything atos needs 😃
-					let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
-					
-					let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
-					
-					if (trimmedString == "")
-					{
-						message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
-						itemsToSkip++
-					}
-					else
-					{
-						replacedReport = (replacedReport as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(0), withString: trimmedString)
-					}
-				}
-				else
-				{
-					if let dsymMessage = dsymResult.message
-					{
-						message = appendMessage(dsymMessage, originalString: message)
-					}
-					itemsToSkip++
-				}
-				
-				sampleMatches = sampleReportExpression.matchesInString(replacedReport, options: [], range: NSRange(location: 0, length: replacedReport.utf16.count))
+			lines = expanedLine.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
+		}
+		
+		var oneLineSymbolicated = false
+		
+		for line in lines
+		{
+			let trimmedLine = removingSpacesAtTheEndOfAString(line)
+			
+			let sampleLine = symbolicateSampleReport(trimmedLine, report: report)
+			if let sampleMessage = sampleLine.message {
+				message = appendMessage(sampleMessage, originalString: message)
 			}
 			
-			return (replacedReport, message)
-		}
-		else if stacktraceMatchesCount > 0 && userDsym != nil
-		{
-			var itemsToSkip = 0
-			var replacedReport = report
-			
-			for var index = 0; index < stacktraceMatchesCount; index++ {
-				let match = stacktraceMatches[itemsToSkip] as NSTextCheckingResult
-				
-				let binary = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(1))
-				let stackAddress = (replacedReport as NSString).substringWithRange(match.rangeAtIndex(2))
-				let decimalAddress = Int((replacedReport as NSString).substringWithRange(match.rangeAtIndex(4)))!
-				
-				let cleanStackAddress = stackAddress.stringByReplacingOccurrencesOfString("0x", withString: "")
-				let intStackAddress = Int(cleanStackAddress, radix: 16)!
-				
-				let loadAddress = "0x" + String((intStackAddress - decimalAddress), radix: 16)
-				
-				let dsymResult = dsymForBinary(binary, report: replacedReport)
-				
-				if let dsymPath = dsymResult.result
-				{
-					//We got everything atos needs 😃
-					let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
-					let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
-					
-					if (trimmedString == "")
-					{
-						message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
-						itemsToSkip++
-					}
-					else
-					{
-						replacedReport = (replacedReport as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
-					}
-				}
-				
-				stacktraceMatches = stacktraceExpression.matchesInString(replacedReport, options: [], range: NSRange(location: 0, length: replacedReport.utf16.count))
+			if sampleLine.symbolicated {
+				result += "\n\(sampleLine.result)"
+				oneLineSymbolicated = true
+				continue
 			}
 			
-			return (replacedReport, message)
+			if userDsym != nil
+			{
+				let stackLine = symbolicateStacktrace(trimmedLine)
+				if let stackMessage = stackLine.message {
+					message = appendMessage(stackMessage, originalString: message)
+				}
+				
+				if stackLine.symbolicated {
+					result += "\n\(stackLine.result)"
+					oneLineSymbolicated = true
+					continue
+				}
+			}
+			
+			result += "\n\(line)"
 		}
-		else
+		
+		if (!oneLineSymbolicated)
 		{
 			message = appendMessage("couldn't find any addresses that need symbolication 😞", originalString: message)
 		}
 		
-		return (nil, message)
+		return (result, message)
+	}
+	
+	private func symbolicateSampleReport(line: String, report: String) -> (result: String, symbolicated: Bool, message: String?)
+	{
+		var message: String? = nil
+		var resultLine = line
+		var symbolicated = false
+		
+		let sampleReportExpression = try! NSRegularExpression(pattern: "\\?\\?\\?\\s*\\(in\\s(.*)\\)\\s*load\\saddress\\s(.*)\\s\\+.*\\[(.*)\\]", options: [])
+		let sampleMatches = sampleReportExpression.matchesInString(line, options: [], range: NSRange(location: 0, length: line.utf16.count))
+		
+		if (sampleMatches.count > 0)
+		{
+			let match = sampleMatches[0] as NSTextCheckingResult
+		
+			let binary = (line as NSString).substringWithRange(match.rangeAtIndex(1))
+			let loadAddress = (line as NSString).substringWithRange(match.rangeAtIndex(2))
+			let stackAddress = (line as NSString).substringWithRange(match.rangeAtIndex(3))
+		
+			let dsymResult = dsymForBinary(binary, report: report)
+		
+			if let dsymPath = dsymResult.result
+			{
+				//We got everything atos needs 😃
+				let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
+				
+				let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+				
+				if (trimmedString == "")
+				{
+					message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
+				}
+				else
+				{
+					resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(0), withString: trimmedString)
+					symbolicated = true
+				}
+			}
+			else
+			{
+				if let dsymMessage = dsymResult.message
+				{
+					message = appendMessage(dsymMessage, originalString: message)
+				}
+			}
+		}
+		
+		return (resultLine, symbolicated, message)
+	}
+	
+	private func symbolicateStacktrace(line: String) -> (result: String, symbolicated: Bool, message: String?)
+	{
+		var message: String? = nil
+		var resultLine = line
+		var symbolicated = false
+		
+		let stacktraceExpression = try! NSRegularExpression(pattern: "[0-9]+\\s+(.*)\\s+(0[xX][0-9a-fA-F]+)\\s(\\1).*\\s([0-9]+)$", options: [.AnchorsMatchLines])
+		let stacktraceMatches = stacktraceExpression.matchesInString(line, options: [], range: NSRange(location: 0, length: line.utf16.count))
+
+		if stacktraceMatches.count > 0
+		{
+			let match = stacktraceMatches[0] as NSTextCheckingResult
+			
+			let binary = (line as NSString).substringWithRange(match.rangeAtIndex(1))
+			let stackAddress = (line as NSString).substringWithRange(match.rangeAtIndex(2))
+			let decimalAddress = Int((line as NSString).substringWithRange(match.rangeAtIndex(4)))!
+			
+			let cleanStackAddress = stackAddress.stringByReplacingOccurrencesOfString("0x", withString: "")
+			let intStackAddress = Int(cleanStackAddress, radix: 16)!
+		
+			let loadAddress = "0x" + String((intStackAddress - decimalAddress), radix: 16)
+			
+			//We can put in an empty string for the report as we really only have one coice for stacktraces: the user providing it's own dSYM
+			let dsymResult = dsymForBinary(binary, report: "")
+		
+			if let dsymPath = dsymResult.result
+			{
+				//We got everything atos needs 😃
+				let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
+				let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+			
+				if (trimmedString == "")
+				{
+					message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
+				}
+				else
+				{
+					resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
+					symbolicated = true
+				}
+			}
+		}
+		
+		return (resultLine, symbolicated, message)
 	}
 	
 	private func appendMessage(input: String, originalString: String?) -> String
@@ -147,6 +193,16 @@ class Symbolicator: NSObject
 		let output = String(data: data, encoding: NSUTF8StringEncoding)!
 		
 		return output
+	}
+	
+	private func removingSpacesAtTheEndOfAString(str: String) -> String {
+		var i: Int = str.characters.count - 1, j: Int = i
+		
+		while(i >= 0 && str[str.startIndex.advancedBy(i)] == " ") {
+			--i
+		}
+		
+		return str.substringWithRange(Range<String.Index>(start: str.startIndex, end: str.endIndex.advancedBy(-(j - i))))
 	}
 	
 	private func dsymForBinary(binary: String, report: String) -> (result:String?, message:String?)
