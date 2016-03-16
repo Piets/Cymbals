@@ -14,8 +14,6 @@ class ViewController: NSViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-
-		textView.lnv_setUpLineNumberView()
 	}
 	
 }

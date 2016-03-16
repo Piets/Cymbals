@@ -26,13 +26,16 @@ class SymbolTextView: NSTextView {
 	let removeDsymButton = NSButton(frame: NSZeroRect)
 	
 	override func viewDidMoveToSuperview() {
+		self.lnv_setUpLineNumberView()
+		
 		self.font = NSFont(name: "Menlo", size: 11)
+		self.lineNumberView.font = NSFont(name: "Menlo", size: 9.5)
 		
 		self.registerForDraggedTypes([NSFilenamesPboardType])
 		
 		//setup dsym view
 		dsymView.removeFromSuperview()
-		dsymView.frame = NSRect(x: 0, y: 0, width: frame.size.width, height: 30)
+		dsymView.frame = NSRect(x: self.lineNumberView.frame.width, y: 0, width: frame.size.width, height: 30)
 		dsymView.autoresizingMask = [.ViewWidthSizable, .ViewMaxYMargin]
 		dsymView.wantsLayer = true
 		dsymView.layer?.backgroundColor = NSColor.windowBackgroundColor().CGColor
@@ -96,8 +99,10 @@ class SymbolTextView: NSTextView {
 				}
 
 				dispatch_async(dispatch_get_main_queue()) {
-						self.window?.title = "Cymbals"
-						self.string = string
+					self.window?.title = "Cymbals"
+					self.string = string
+					
+					self.lineNumberView.needsDisplay = true
 					
 					if (result.result != nil)
 					{
@@ -113,6 +118,7 @@ class SymbolTextView: NSTextView {
 		{
 			self.window?.title = "👎 Cymbals"
 			self.string = "Could not load content of pasteboard 😕"
+			self.lineNumberView.needsDisplay = true
 		}
 	}
 	
