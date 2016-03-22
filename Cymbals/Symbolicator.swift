@@ -10,11 +10,16 @@ import Cocoa
 
 class Symbolicator: NSObject
 {
-	
 	var dsymsCache = [String: String]()
-	
 	var userDsym: String?
 	
+	/**
+	Process a sample report or stacktrace
+	
+	- Parameter report: The complete report to process
+	
+	- Returns: The `result` contains the symbolicated report if symbolication succeeded, `message` contains information if symbolication did not succeed or debug information even if symbolication succeeded
+	*/
 	internal func processSampleReport(report: String) -> (result:String?, message:String?)
 	{
 		var message:String? = nil
@@ -75,6 +80,14 @@ class Symbolicator: NSObject
 		return (result, message)
 	}
 	
+	/**
+	Try to symbolicate a line of a sample report
+	
+	- Parameter line: A line of a stacktrace to try symbolication on
+	- Parameter report: The complete report the line is from. This is needed in order to parse the dsym UUIDs at the bottom
+	
+	- Returns: The `result` contains the symbolicated line (or the original if symbolication was unsuccessful), `symbolicated` is true if atos did output a symbol name, `message` additionally contains some information which may be presented to the user
+	*/
 	private func symbolicateSampleReport(line: String, report: String) -> (result: String, symbolicated: Bool, message: String?)
 	{
 		var message: String? = nil
@@ -123,6 +136,13 @@ class Symbolicator: NSObject
 		return (resultLine, symbolicated, message)
 	}
 	
+	/**
+	Try to symbolicate a line of a stacktrace
+	
+	- Parameter line: A line of a stacktrace to try symbolication on
+	
+	- Returns: The `result` contains the symbolicated line (or the original if symbolication was unsuccessful), `symbolicated` is true if atos did output a symbol name, `message` additionally contains some information which may be presented to the user
+	*/
 	private func symbolicateStacktrace(line: String) -> (result: String, symbolicated: Bool, message: String?)
 	{
 		var message: String? = nil
@@ -169,6 +189,14 @@ class Symbolicator: NSObject
 		return (resultLine, symbolicated, message)
 	}
 	
+	/**
+	Append a message to the end of a string
+	
+	- Parameter input: The message to append
+	- Parameter originalString: The string where the message should be appended. Will be generated if nil
+	
+	- Returns: The `originalString` + the `input` string concatenated
+	*/
 	private func appendMessage(input: String, originalString: String?) -> String
 	{
 		if let origString = originalString
@@ -179,6 +207,13 @@ class Symbolicator: NSObject
 		return input
 	}
 	
+	/**
+	Runs a shell command and outputs the result as a string
+	
+	- Parameter args: A variable list of arguments beginning with the launchPath (e. g. `"ls", "-l"`)
+	
+	- Returns: The complete result of `stdout` of the shell command
+	*/
 	private func shell(args: String...) -> String
 	{
 		let task = NSTask()
@@ -195,6 +230,15 @@ class Symbolicator: NSObject
 		return output
 	}
 	
+	/**
+	Remove whitespaces at the end of a string.
+	
+	Used in order to maintain intendations in the front of lines
+	
+	- Parameter str: The string to trim
+	
+	- Returns: The trimmed string with removed whitespaces from the end of the string
+	*/
 	private func removingSpacesAtTheEndOfAString(str: String) -> String {
 		var i: Int = str.characters.count - 1, j: Int = i
 		
@@ -205,6 +249,16 @@ class Symbolicator: NSObject
 		return str.substringWithRange(Range<String.Index>(start: str.startIndex, end: str.endIndex.advancedBy(-(j - i))))
 	}
 	
+	/**
+	Returns the path to a dsym file to use with atos
+	
+	If the user specified a dsym to use this method simply returns the path to this dsym
+	
+	- Parameter binary: (If applicable) the binary which contains the symbol (for lookup)
+	- Parameter report: The report in which to search for the dsym UUID
+	
+	- Returns: A touple containing a `result` path and a `message` if needed
+	*/
 	private func dsymForBinary(binary: String, report: String) -> (result:String?, message:String?)
 	{
 		if let userDsym = self.userDsym
