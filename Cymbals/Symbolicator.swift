@@ -26,17 +26,17 @@ class Symbolicator: NSObject
 		var result = ""
 		
 		//split the report into lines
-		var lines = report.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
+		let lines = report.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
 		
-		if (lines.count == 1)
-		{
-			//try to insert some newlines, don't know if it's a good idea
-			//wait, i definetly know it's a bad idea 😇
-			let lineExpression = try! NSRegularExpression(pattern: "\\+\\s[0-9]+\\s?", options: [])
-			let expanedLine = lineExpression.stringByReplacingMatchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count), withTemplate: "$0\n")
-			
-			lines = expanedLine.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
-		}
+//		if (lines.count == 1)
+//		{
+//			//try to insert some newlines, don't know if it's a good idea
+//			//wait, i definetly know it's a bad idea 😇
+//			let lineExpression = try! NSRegularExpression(pattern: "\\+\\s[0-9]+\\s?", options: [])
+//			let expanedLine = lineExpression.stringByReplacingMatchesInString(report, options: [], range: NSRange(location: 0, length: report.utf16.count), withTemplate: "$0\n")
+//			
+//			lines = expanedLine.characters.split { $0 == "\n" || $0 == "\r\n" }.map(String.init)
+//		}
 		
 		var oneLineSymbolicated = false
 		
@@ -64,6 +64,17 @@ class Symbolicator: NSObject
 				
 				if stackLine.symbolicated {
 					result += "\n\(stackLine.result)"
+					oneLineSymbolicated = true
+					continue
+				}
+				
+				let hangLine = symbolicateHangtrace(trimmedLine)
+				if let hangMessage = hangLine.message {
+					message = appendMessage(hangMessage, originalString: message)
+				}
+				
+				if hangLine.symbolicated {
+					result += "\n\(hangLine.result)"
 					oneLineSymbolicated = true
 					continue
 				}
@@ -181,6 +192,59 @@ class Symbolicator: NSObject
 				else
 				{
 					resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
+					symbolicated = true
+				}
+			}
+		}
+		
+		return (resultLine, symbolicated, message)
+	}
+	
+	/**
+	Try to symbolicate a line of a hang
+	
+	- Parameter line: A line of a hang to try symbolication on
+	
+	- Returns: The `result` contains the symbolicated line (or the original if symbolication was unsuccessful), `symbolicated` is true if atos did output a symbol name, `message` additionally contains some information which may be presented to the user
+	*/
+	private func symbolicateHangtrace(line: String) -> (result: String, symbolicated: Bool, message: String?)
+	{
+		var message: String? = nil
+		var resultLine = line
+		var symbolicated = false
+		
+		let hangExpression = try! NSRegularExpression(pattern: "\\?\\?\\?.*\\((.*)\\s\\+\\s([0-9]+).*(0[xX][0-9a-fA-F]+)\\]", options: [.AnchorsMatchLines])
+		let hangMatches = hangExpression.matchesInString(line, options: [], range: NSRange(location: 0, length: line.utf16.count))
+		
+		if hangMatches.count > 0
+		{
+			let match = hangMatches[0] as NSTextCheckingResult
+			
+			let binary = (line as NSString).substringWithRange(match.rangeAtIndex(1))
+			let stackAddress = (line as NSString).substringWithRange(match.rangeAtIndex(3))
+			let decimalAddress = Int((line as NSString).substringWithRange(match.rangeAtIndex(2)))!
+			
+			let cleanStackAddress = stackAddress.stringByReplacingOccurrencesOfString("0x", withString: "")
+			let intStackAddress = Int(cleanStackAddress, radix: 16)!
+			
+			let loadAddress = "0x" + String((intStackAddress - decimalAddress), radix: 16)
+			
+			//We can put in an empty string for the report as we really only have one coice for stacktraces: the user providing it's own dSYM
+			let dsymResult = dsymForBinary(binary, report: "")
+			
+			if let dsymPath = dsymResult.result
+			{
+				//We got everything atos needs 😃
+				let symbol = shell("atos", "-o", dsymPath, "-l", loadAddress, stackAddress)
+				let trimmedString = symbol.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
+				
+				if (trimmedString == "")
+				{
+					message = appendMessage("Output from atos was an empty string:\natos -o \"\(dsymPath)\" -l \(loadAddress) \(stackAddress)", originalString: message)
+				}
+				else
+				{
+					resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(0), withString: trimmedString)
 					symbolicated = true
 				}
 			}
