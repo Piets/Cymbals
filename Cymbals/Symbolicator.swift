@@ -160,7 +160,7 @@ class Symbolicator: NSObject
 		var resultLine = line
 		var symbolicated = false
 		
-		let stacktraceExpression = try! NSRegularExpression(pattern: "[0-9]+\\s+(.*)\\s+(0[xX][0-9a-fA-F]+)\\s(\\1).*\\s([0-9]+)$", options: [.AnchorsMatchLines])
+		let stacktraceExpression = try! NSRegularExpression(pattern: "[0-9]+\\s+(.*)\\s+(0[xX][0-9a-fA-F]+)\\s(\\1?).*\\s([0-9]+)$", options: [.AnchorsMatchLines])
 		let stacktraceMatches = stacktraceExpression.matchesInString(line, options: [], range: NSRange(location: 0, length: line.utf16.count))
 
 		if stacktraceMatches.count > 0
@@ -191,7 +191,13 @@ class Symbolicator: NSObject
 				}
 				else
 				{
-					resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
+					let range = match.rangeAtIndex(3)
+					if range.location != Foundation.NSNotFound {
+						resultLine = (line as NSString).stringByReplacingCharactersInRange(match.rangeAtIndex(3), withString: trimmedString)
+					} else {
+						resultLine = trimmedString
+					}
+					
 					symbolicated = true
 				}
 			}
