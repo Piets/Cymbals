@@ -52,7 +52,7 @@ class SymbolTextView: NSTextView {
 		removeDsymButton.removeFromSuperview()
 		removeDsymButton.frame = NSRect(x: frame.size.width - 25, y: 5, width: 20, height: 20)
 		removeDsymButton.autoresizingMask = [.ViewMinXMargin]
-		removeDsymButton.setButtonType(.MomentaryPushInButton)
+		removeDsymButton.setButtonType(NSMomentaryPushInButton)
 		removeDsymButton.bordered = false
 		removeDsymButton.image = NSImage(named: NSImageNameStopProgressFreestandingTemplate)
 		removeDsymButton.target = self

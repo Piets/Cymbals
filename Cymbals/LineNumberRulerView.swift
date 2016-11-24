@@ -85,7 +85,7 @@ class LineNumberRulerView: NSRulerView {
 		self.ruleThickness = 40
 	}
 
-	required init?(coder: NSCoder) {
+	required init(coder: NSCoder) {
 	    fatalError("init(coder:) has not been implemented")
 	}
 	
